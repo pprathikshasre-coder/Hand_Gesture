@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hand Gesture AI Studio • Cyber Vision Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #090d16;
+            --bg-card: rgba(18, 26, 43, 0.75);
+            --bg-glass: rgba(255, 255, 255, 0.04);
+            --border-glass: rgba(255, 255, 255, 0.08);
+            --border-glow: rgba(0, 242, 254, 0.3);
+            --accent-cyan: #00f2fe;
+            --accent-blue: #4facfe;
+            --accent-purple: #9b51e0;
+            --accent-green: #00e676;
+            --accent-red: #ff3366;
+            --accent-orange: #ff9100;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(79, 172, 254, 0.12) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(155, 81, 224, 0.12) 0px, transparent 50%),
+                radial-gradient(at 50% 50%, rgba(0, 242, 254, 0.05) 0px, transparent 50%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* HEADER */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background: rgba(13, 19, 33, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-glass);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+        }
+
+        .brand-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.4);
+        }
+
+        .brand-text h1 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            background: linear-gradient(90deg, #ffffff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-text p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .telemetry-strip {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .pill {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.45rem 1rem;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            box-shadow: 0 0 8px var(--accent-green);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.9); }
+        }
+
+        /* MAIN CONTENT */
+        main {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1.25fr 1fr;
+            gap: 1.75rem;
+            padding: 1.75rem 2rem;
+            max-width: 1700px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        @media (max-width: 1100px) {
+            main { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: 20px;
+            padding: 1.5rem;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        /* VIEWPORT CARD */
+        .video-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: #000;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border-glass);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+        }
+
+        .video-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .viewport-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            padding: 0.75rem 1.25rem;
+            border-radius: 14px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 0.6rem;
+        }
+
+        .btn {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            color: var(--text-main);
+            padding: 0.55rem 1.1rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            color: #000;
+            border: none;
+            font-weight: 700;
+            box-shadow: 0 4px 15px rgba(0, 242, 254, 0.3);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 6px 20px rgba(0, 242, 254, 0.5);
+            background: linear-gradient(135deg, #26f4ff, #62b7ff);
+        }
+
+        .btn-purple {
+            background: linear-gradient(135deg, #9b51e0, #7028e4);
+            color: #fff;
+            border: none;
+        }
+
+        .btn-danger {
+            background: rgba(255, 51, 102, 0.15);
+            border-color: rgba(255, 51, 102, 0.4);
+            color: #ff4d7d;
+        }
+
+        /* FINGERS REAL-TIME HUD */
+        .fingers-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.75rem;
+        }
+
+        .finger-card {
+            background: rgba(13, 19, 33, 0.6);
+            border: 1px solid var(--border-glass);
+            padding: 0.85rem 0.5rem;
+            border-radius: 12px;
+            text-align: center;
+            transition: all 0.25s ease;
+        }
+
+        .finger-card.active {
+            border-color: var(--accent-green);
+            background: rgba(0, 230, 118, 0.1);
+            box-shadow: 0 0 15px rgba(0, 230, 118, 0.2);
+        }
+
+        .finger-name {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        .finger-state {
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin-top: 0.3rem;
+            color: #64748b;
+        }
+
+        .finger-card.active .finger-state {
+            color: var(--accent-green);
+        }
+
+        /* CONTROL TABS */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            border-bottom: 1px solid var(--border-glass);
+            padding-bottom: 0.75rem;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 700;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .tab-btn.active {
+            color: #fff;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+        }
+
+        .tab-content {
+            display: none;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .tab-content.active {
+            display: flex;
+        }
+
+        /* MODE CARDS */
+        .modes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .mode-btn {
+            background: rgba(13, 19, 33, 0.7);
+            border: 1px solid var(--border-glass);
+            padding: 1rem 0.75rem;
+            border-radius: 14px;
+            color: var(--text-main);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .mode-btn:hover {
+            border-color: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, rgba(0, 242, 254, 0.15), rgba(79, 172, 254, 0.15));
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.2);
+        }
+
+        .mode-icon {
+            font-size: 1.6rem;
+        }
+
+        .mode-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        /* DYNAMIC MODE DETAIL BOX */
+        .detail-box {
+            background: rgba(13, 19, 33, 0.7);
+            border: 1px solid var(--border-glass);
+            border-radius: 14px;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+
+        .detail-box h3 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .score-board {
+            display: flex;
+            justify-content: space-around;
+            padding: 0.85rem;
+            background: var(--bg-glass);
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 800;
+        }
+
+        .typed-box {
+            background: #050811;
+            border: 1px solid var(--border-glass);
+            border-radius: 10px;
+            padding: 1rem;
+            font-family: monospace;
+            font-size: 1.1rem;
+            min-height: 55px;
+            color: var(--accent-cyan);
+            word-break: break-all;
+        }
+
+        /* STANDALONE GRID */
+        .app-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.9rem 1.25rem;
+            background: rgba(13, 19, 33, 0.6);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .app-item:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(18, 26, 43, 0.85);
+        }
+
+        .app-meta h4 {
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        .app-meta p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.2rem;
+        }
+
+        /* FOOTER */
+        footer {
+            padding: 1rem 2rem;
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border-glass);
+            background: rgba(13, 19, 33, 0.5);
+            margin-top: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <div class="brand">
+            <div class="brand-icon">✨</div>
+            <div class="brand-text">
+                <h1>GESTURE AI STUDIO</h1>
+                <p>MediaPipe & OpenCV Real-Time Vision Framework</p>
+            </div>
+        </div>
+
+        <div class="telemetry-strip">
+            <div class="pill">
+                <div class="dot"></div>
+                <span id="camStatus">Camera Active (0)</span>
+            </div>
+            <div class="pill">
+                <span>FPS:</span>
+                <span id="fpsVal" style="color: var(--accent-green); font-weight: 800;">--</span>
+            </div>
+            <div class="pill">
+                <span>Gesture:</span>
+                <span id="gestureVal" style="color: var(--accent-cyan);">Detecting...</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN STUDIO -->
+    <main>
+        <!-- LEFT COLUMN: LIVE VIDEO STREAM -->
+        <div class="card">
+            <div class="video-container">
+                <img id="videoStream" src="/video_feed" alt="Live Gesture Video Stream">
+            </div>
+
+            <!-- VIEWPORT CONTROLS -->
+            <div class="viewport-controls">
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="togglePause()" id="pauseBtn">⏸ Pause Feed</button>
+                    <button class="btn" onclick="toggleMirror()" id="mirrorBtn">🪞 Mirror Mode: ON</button>
+                </div>
+                <div class="pill">
+                    <span id="handsVal">Hands: 0</span>
+                </div>
+            </div>
+
+            <!-- FINGERS REAL-TIME HUD -->
+            <div class="fingers-grid">
+                <div class="finger-card" id="fThumb">
+                    <div class="finger-name">Thumb</div>
+                    <div class="finger-state">--</div>
+                </div>
+                <div class="finger-card" id="fIndex">
+                    <div class="finger-name">Index</div>
+                    <div class="finger-state">--</div>
+                </div>
+                <div class="finger-card" id="fMiddle">
+                    <div class="finger-name">Middle</div>
+                    <div class="finger-state">--</div>
+                </div>
+                <div class="finger-card" id="fRing">
+                    <div class="finger-name">Ring</div>
+                    <div class="finger-state">--</div>
+                </div>
+                <div class="finger-card" id="fPinky">
+                    <div class="finger-name">Pinky</div>
+                    <div class="finger-state">--</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: INTERACTIVE CONTROL CENTER -->
+        <div class="card">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('modesTab')">⚡ Live Studio Modes</button>
+                <button class="tab-btn" onclick="switchTab('appsTab')">🎮 Dedicated Windows</button>
+                <button class="tab-btn" onclick="switchTab('guideTab')">📖 Gesture Manual</button>
+            </div>
+
+            <!-- TAB 1: STUDIO MODES -->
+            <div class="tab-content active" id="modesTab">
+                <div class="modes-grid">
+                    <div class="mode-btn active" onclick="setMode('tracking')" id="mTracking">
+                        <span class="mode-icon">🖐️</span>
+                        <span class="mode-title">Tracking</span>
+                    </div>
+                    <div class="mode-btn" onclick="setMode('fingers')" id="mFingers">
+                        <span class="mode-icon">🔢</span>
+                        <span class="mode-title">Fingers</span>
+                    </div>
+                    <div class="mode-btn" onclick="setMode('volume')" id="mVolume">
+                        <span class="mode-icon">🔊</span>
+                        <span class="mode-title">Volume</span>
+                    </div>
+                    <div class="mode-btn" onclick="setMode('rps')" id="mRps">
+                        <span class="mode-icon">✂️</span>
+                        <span class="mode-title">RPS Game</span>
+                    </div>
+                    <div class="mode-btn" onclick="setMode('snake')" id="mSnake">
+                        <span class="mode-icon">🐍</span>
+                        <span class="mode-title">Snake</span>
+                    </div>
+                    <div class="mode-btn" onclick="setMode('keyboard')" id="mKeyboard">
+                        <span class="mode-icon">⌨️</span>
+                        <span class="mode-title">Keyboard</span>
+                    </div>
+                    <div class="mode-btn" onclick="setMode('presentation')" id="mPresentation">
+                        <span class="mode-icon">📽️</span>
+                        <span class="mode-title">Slides</span>
+                    </div>
+                </div>
+
+                <!-- DYNAMIC DETAIL CARDS -->
+                <div id="dynamicDetail" class="detail-box">
+                    <h3 id="detailTitle">🖐️ Real-Time 3D Hand Mesh Tracking</h3>
+                    <p id="detailDesc" style="font-size: 0.85rem; color: var(--text-muted);">
+                        Detecting 21 anatomical 3D landmark points on palm and knuckles with low-latency regression.
+                    </p>
+
+                    <!-- Interactive controls injected dynamically based on mode -->
+                    <div id="detailControls" style="display: flex; gap: 0.75rem; flex-wrap: wrap;"></div>
+                </div>
+            </div>
+
+            <!-- TAB 2: STANDALONE WINDOWS -->
+            <div class="tab-content" id="appsTab">
+                <div style="display: flex; flex-direction: column; gap: 0.65rem;">
+                    <div class="app-item">
+                        <div class="app-meta">
+                            <h4>🐍 Snake Game Window</h4>
+                            <p>Guide snake with index finger & eat donuts</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="launchStandalone('SnakeGame.py')">Launch ↗</button>
+                    </div>
+                    <div class="app-item">
+                        <div class="app-meta">
+                            <h4>✂️ Rock-Paper-Scissors Battle</h4>
+                            <p>Play against AI with full-screen animated graphics</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="launchStandalone('RockPaperScissorsGame.py')">Launch ↗</button>
+                    </div>
+                    <div class="app-item">
+                        <div class="app-meta">
+                            <h4>⌨️ Virtual Air Keyboard</h4>
+                            <p>Air typing with pinch-click key selection</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="launchStandalone('VirtualKeyboard.py')">Launch ↗</button>
+                    </div>
+                    <div class="app-item">
+                        <div class="app-meta">
+                            <h4>📽️ Slide Presentation Remote</h4>
+                            <p>Gesture slide navigation & whiteboard annotator</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="launchStandalone('PresentationControl.py')">Launch ↗</button>
+                    </div>
+                    <div class="app-item">
+                        <div class="app-meta">
+                            <h4>🔊 Master Volume Floating HUD</h4>
+                            <p>Dedicated pinch-gesture PC volume controller</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="launchStandalone('VolumeControl.py')">Launch ↗</button>
+                    </div>
+                    <div class="app-item">
+                        <div class="app-meta">
+                            <h4>📱 Gesture Touchless Menu</h4>
+                            <p>Purely in-camera hand navigation menu</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="launchStandalone('MenuScreen.py')">Launch ↗</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: GESTURE MANUAL -->
+            <div class="tab-content" id="guideTab">
+                <div style="display: flex; flex-direction: column; gap: 0.65rem; font-size: 0.85rem;">
+                    <div class="detail-box">
+                        <h4 style="color: var(--accent-cyan);">✊ Closed Fist (Rock)</h4>
+                        <p style="color: var(--text-muted);">All 5 fingers curled: <code>[0, 0, 0, 0, 0]</code></p>
+                        <p>Triggers Rock in RPS Game.</p>
+                    </div>
+                    <div class="detail-box">
+                        <h4 style="color: var(--accent-cyan);">✋ Open Palm (Paper)</h4>
+                        <p style="color: var(--text-muted);">All 5 fingers extended: <code>[1, 1, 1, 1, 1]</code></p>
+                        <p>Triggers Paper in RPS Game | Count = 5.</p>
+                    </div>
+                    <div class="detail-box">
+                        <h4 style="color: var(--accent-cyan);">✌️ Peace / Scissors</h4>
+                        <p style="color: var(--text-muted);">Index & Middle fingers up: <code>[0, 1, 1, 0, 0]</code></p>
+                        <p>Triggers Scissors in RPS | Select in Gesture Menu.</p>
+                    </div>
+                    <div class="detail-box">
+                        <h4 style="color: var(--accent-cyan);">☝️ Index Fingertip Point</h4>
+                        <p style="color: var(--text-muted);">Index up only: <code>[0, 1, 0, 0, 0]</code></p>
+                        <p>Steers Snake head | Air Keyboard hover | In-air drawing.</p>
+                    </div>
+                    <div class="detail-box">
+                        <h4 style="color: var(--accent-cyan);">🤏 Thumb-Index Pinch</h4>
+                        <p style="color: var(--text-muted);">Distance between 4 and 8</p>
+                        <p>Adjusts master Windows volume from 0% to 100%. Pinky down locks volume.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer>
+        Hand Gesture Recognition System • Built with MediaPipe, OpenCV, Flask & CustomTkinter
+    </footer>
+
+    <!-- SCRIPT -->
+    <script>
+        let currentMode = "tracking";
+        let isPaused = false;
+        let isMirror = true;
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            const btn = document.getElementById('m' + mode.charAt(0).toUpperCase() + mode.slice(1));
+            if (btn) btn.classList.add('active');
+
+            fetch('/api/set_mode', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({mode: mode})
+            });
+
+            updateDetailBox(mode);
+        }
+
+        function updateDetailBox(mode) {
+            const title = document.getElementById('detailTitle');
+            const desc = document.getElementById('detailDesc');
+            const controls = document.getElementById('detailControls');
+            controls.innerHTML = "";
+
+            if (mode === "tracking") {
+                title.innerHTML = "🖐️ Real-Time 3D Hand Mesh Tracking";
+                desc.innerText = "Tracking all 21 joints with skeletal connections in real-time.";
+            } else if (mode === "fingers") {
+                title.innerHTML = "🔢 Live Finger Counter HUD";
+                desc.innerText = "Displays real-time count of extended fingers with live HUD badge.";
+            } else if (mode === "volume") {
+                title.innerHTML = "🔊 Gesture Volume Controller";
+                desc.innerText = "Pinch thumb and index to adjust master volume. Drop pinky finger to lock.";
+                controls.innerHTML = `
+                    <div style="width: 100%; display: flex; align-items: center; gap: 1rem;">
+                        <span>Vol:</span>
+                        <input type="range" id="volSlider" min="0" max="100" style="flex: 1;" disabled>
+                        <span id="volVal">50%</span>
+                    </div>
+                `;
+            } else if (mode === "rps") {
+                title.innerHTML = "✂️ Rock-Paper-Scissors AI Battle";
+                desc.innerText = "Press 'Start Round' then hold up Rock ✊, Paper ✋, or Scissors ✌️ before countdown hits 0!";
+                controls.innerHTML = `
+                    <button class="btn btn-primary" onclick="rpsStart()">🎮 Start Round (3s Countdown)</button>
+                    <button class="btn btn-danger" onclick="rpsReset()">🔄 Reset Scores</button>
+                    <div class="score-board" style="width: 100%; margin-top: 0.5rem;">
+                        <span>You: <span id="playerScore" style="color: var(--accent-green);">0</span></span>
+                        <span>AI: <span id="aiScore" style="color: var(--accent-red);">0</span></span>
+                    </div>
+                `;
+            } else if (mode === "snake") {
+                title.innerHTML = "🐍 Arcade Snake Game";
+                desc.innerText = "Move your index fingertip to steer the snake and eat the yellow donut food!";
+                controls.innerHTML = `
+                    <button class="btn btn-primary" onclick="snakeReset()">🔄 Restart Snake Game</button>
+                    <div style="font-weight: 700; font-size: 1.1rem; color: var(--accent-cyan); align-self: center;">
+                        Score: <span id="snakeScoreVal">0</span>
+                    </div>
+                `;
+            } else if (mode === "keyboard") {
+                title.innerHTML = "⌨️ Virtual Air Keyboard";
+                desc.innerText = "Hover index finger over keys and pinch index+middle fingers together to click.";
+                controls.innerHTML = `
+                    <div class="typed-box" id="typedBox" style="width: 100%;">_</div>
+                    <button class="btn" onclick="keyboardClear()">Clear Text</button>
+                `;
+            } else if (mode === "presentation") {
+                title.innerHTML = "📽️ Slide Presentation Remote";
+                desc.innerText = "Thumb extended = Previous slide | Pinky extended = Next slide.";
+                controls.innerHTML = `
+                    <div style="font-size: 1.1rem; font-weight: 800; color: var(--accent-cyan);">
+                        Slide: <span id="slideIndexVal">1 / 3</span>
+                    </div>
+                `;
+            }
+        }
+
+        function togglePause() {
+            fetch('/api/toggle_pause', {method: 'POST'})
+                .then(r => r.json())
+                .then(d => {
+                    isPaused = d.is_paused;
+                    document.getElementById('pauseBtn').innerText = isPaused ? "▶ Resume Feed" : "⏸ Pause Feed";
+                });
+        }
+
+        function toggleMirror() {
+            fetch('/api/toggle_mirror', {method: 'POST'})
+                .then(r => r.json())
+                .then(d => {
+                    isMirror = d.mirror;
+                    document.getElementById('mirrorBtn').innerText = isMirror ? "🪞 Mirror Mode: ON" : "🪞 Mirror Mode: OFF";
+                });
+        }
+
+        function rpsStart() { fetch('/api/rps_start', {method: 'POST'}); }
+        function rpsReset() { fetch('/api/rps_reset', {method: 'POST'}); }
+        function snakeReset() { fetch('/api/snake_reset', {method: 'POST'}); }
+        function keyboardClear() { fetch('/api/keyboard_clear', {method: 'POST'}); }
+
+        function launchStandalone(script) {
+            fetch('/api/launch_standalone', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({script: script})
+            });
+            alert("Launching " + script + " in dedicated desktop window! Press 'q' in its window when done.");
+        }
+
+        // Live Telemetry Poller (Every 250ms)
+        setInterval(() => {
+            fetch('/api/status')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('fpsVal').innerText = data.fps;
+                    document.getElementById('gestureVal').innerText = data.detected_gesture;
+                    document.getElementById('handsVal').innerText = "Hands: " + data.hands_count;
+
+                    // Update Fingers HUD
+                    const fMap = ["fThumb", "fIndex", "fMiddle", "fRing", "fPinky"];
+                    data.fingers_state.forEach((st, i) => {
+                        const el = document.getElementById(fMap[i]);
+                        if (el) {
+                            if (st === 1) {
+                                el.classList.add('active');
+                                el.querySelector('.finger-state').innerText = "ON";
+                            } else {
+                                el.classList.remove('active');
+                                el.querySelector('.finger-state').innerText = "OFF";
+                            }
+                        }
+                    });
+
+                    // Update Volume Slider if present
+                    const vSlider = document.getElementById('volSlider');
+                    const vVal = document.getElementById('volVal');
+                    if (vSlider && vVal) {
+                        vSlider.value = data.volume;
+                        vVal.innerText = data.volume + "%";
+                    }
+
+                    // Update RPS scores if present
+                    const pScore = document.getElementById('playerScore');
+                    const aScore = document.getElementById('aiScore');
+                    if (pScore && aScore) {
+                        pScore.innerText = data.rps_scores[1];
+                        aScore.innerText = data.rps_scores[0];
+                    }
+
+                    // Update Snake score if present
+                    const sScore = document.getElementById('snakeScoreVal');
+                    if (sScore) sScore.innerText = data.snake_score;
+
+                    // Update Typed Text if present
+                    const tBox = document.getElementById('typedBox');
+                    if (tBox) tBox.innerText = (data.typed_text || "") + "_";
+
+                    // Update Slide index if present
+                    const sIdx = document.getElementById('slideIndexVal');
+                    if (sIdx) sIdx.innerText = data.slide_index + " / " + data.total_slides;
+                })
+                .catch(() => {});
+        }, 250);
+
+        // Initial setup
+        updateDetailBox("tracking");
+
+        const vImg = document.getElementById('videoStream');
+        if (vImg) {
+            vImg.onerror = function() {
+                setTimeout(() => {
+                    vImg.src = '/video_feed?t=' + Date.now();
+                }, 800);
+            };
+        }
+    </script>
+</body>
+</html>

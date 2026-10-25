@@ -13,11 +13,16 @@ detector = HandDetector(maxHands=1)
 timer = 1
 stateResult = False
 startGame = False
+stateResult = False
+imgAI = None
 scores = [0, 0]  # [AI, Player]
+bgBase = cv2.imread("Resources/BG.png")
 
 while True:
-    imgBG = cv2.imread("Resources/BG.png")
+    imgBG = bgBase.copy()
     success, img = cap.read()
+    if not success:
+        continue
 
     imgScaled = cv2.resize(img, (0, 0), None, 0.875, 0.875)
     imgScaled = imgScaled[:, 80:480]
@@ -64,7 +69,7 @@ while True:
 
     imgBG[234:654, 795:1195] = imgScaled
 
-    if stateResult:
+    if stateResult and imgAI is not None:
         imgBG = cvzone.overlayPNG(imgBG, imgAI, (149, 310))
 
     cv2.putText(imgBG, str(scores[0]), (410, 215), cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 6)
@@ -79,3 +84,8 @@ while True:
         startGame = True
         initialTime = time.time()
         stateResult = False
+    elif key == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()

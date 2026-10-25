@@ -82,20 +82,21 @@ class SnakeGameClass:
                                scale=3, thickness=3, offset=10)
 
             # Check for Collision
-            pts = np.array(self.points[:-2], np.int32)
-            pts = pts.reshape((-1, 1, 2))
-            cv2.polylines(imgMain, [pts], False, (0, 255, 0), 3)
-            minDist = cv2.pointPolygonTest(pts, (cx, cy), True)
+            if len(self.points) > 5:
+                pts = np.array(self.points[:-2], np.int32)
+                pts = pts.reshape((-1, 1, 2))
+                cv2.polylines(imgMain, [pts], False, (0, 255, 0), 3)
+                minDist = cv2.pointPolygonTest(pts, (cx, cy), True)
 
-            if -0.2 <= minDist <= 0.2:
-                print("Hit")
-                self.gameOver = True
-                self.points = []  # all points of the snake
-                self.lengths = []  # distance between each point
-                self.currentLength = 0  # total length of the snake
-                self.allowedLength = 150  # total allowed Length
-                self.previousHead = 0, 0  # previous head point
-                self.randomFoodLocation()
+                if -0.2 <= minDist <= 0.2:
+                    print("Hit")
+                    self.gameOver = True
+                    self.points = []  # all points of the snake
+                    self.lengths = []  # distance between each point
+                    self.currentLength = 0  # total length of the snake
+                    self.allowedLength = 150  # total allowed Length
+                    self.previousHead = 0, 0  # previous head point
+                    self.randomFoodLocation()
 
         return imgMain
 
@@ -115,3 +116,8 @@ while True:
     key = cv2.waitKey(1)
     if key == ord('r'):
         game.gameOver = False
+    elif key == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()

@@ -19,9 +19,12 @@ pTime = 0
 detector = htm.HandDetector(detectionCon=0.7, maxHands=1)
 
 devices = AudioUtilities.GetSpeakers()
-interface = devices.Activate(
-    IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
-volume = cast(interface, POINTER(IAudioEndpointVolume))
+if hasattr(devices, 'Activate'):
+    interface = devices.Activate(
+        IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+    volume = cast(interface, POINTER(IAudioEndpointVolume))
+else:
+    volume = devices.EndpointVolume
 # volume.GetMute()
 # volume.GetMasterVolumeLevel()
 volRange = volume.GetVolumeRange()
@@ -42,9 +45,9 @@ while True:
     if len(lmList) != 0:
 
         # Filter based on size
-        area = (bbox[0] * bbox[1]) // 100
+        area = ((bbox[2] - bbox[0]) * (bbox[3] - bbox[1])) // 100
         # print(area)
-        if 250 < area < 1000:
+        if 100 < area < 1500:
 
             # Find Distance between index and Thumb
             length, img, lineInfo = detector.findDistance(4, 8, img)
@@ -87,4 +90,8 @@ while True:
                 1, (255, 0, 0), 3)
 
     cv2.imshow("Img", img)
-    cv2.waitKey(1)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()

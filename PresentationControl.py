@@ -1,4 +1,4 @@
-from HandTrackingModule import HandDetector
+from cvzone.HandTrackingModule import HandDetector
 import cv2
 import os
 import numpy as np
@@ -36,6 +36,8 @@ print(pathImages)
 while True:
     # Get image frame
     success, img = cap.read()
+    if not success:
+        continue
     img = cv2.flip(img, 1)
     pathFullImage = os.path.join(folderPath, pathImages[imgNumber])
     imgCurrent = cv2.imread(pathFullImage)
@@ -120,3 +122,6 @@ while True:
     key = cv2.waitKey(1)
     if key == ord('q'):
         break
+
+cap.release()
+cv2.destroyAllWindows()

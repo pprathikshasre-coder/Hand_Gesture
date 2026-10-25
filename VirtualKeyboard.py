@@ -64,6 +64,8 @@ for i in range(len(keys)):
 
 while True:
     success, img = cap.read()
+    if not success:
+        continue
     img = detector.findHands(img)
     lmList, bboxInfo = detector.findPositionVol(img)
     img = drawAll(img, buttonList)
@@ -73,7 +75,7 @@ while True:
             x, y = button.pos
             w, h = button.size
 
-            if x < lmList[8][0] < x + w and y < lmList[8][1] < y + h:
+            if x < lmList[8][1] < x + w and y < lmList[8][2] < y + h:
                 cv2.rectangle(img, (x - 5, y - 5), (x + w + 5, y + h + 5), (175, 0, 175), cv2.FILLED)
                 cv2.putText(img, button.text, (x + 20, y + 65),
                             cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
@@ -95,4 +97,8 @@ while True:
                 cv2.FONT_HERSHEY_PLAIN, 5, (255, 255, 255), 5)
 
     cv2.imshow("Image", img)
-    cv2.waitKey(1)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()

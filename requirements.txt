@@ -1,0 +1,12 @@
+opencv-python
+opencv-contrib-python
+mediapipe==0.10.14
+cvzone==1.6.1
+customtkinter
+darkdetect
+pynput
+pycaw
+comtypes
+numpy
+pillow
+psutil
