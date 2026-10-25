@@ -36,21 +36,7 @@ while True:
     lmList = detector.findPosition(img, draw=False)
 
     if len(lmList) != 0:
-        fingers = []
-
-        # Thumb
-        if lmList[tipIds[0]][1] > lmList[tipIds[0] - 1][1]:
-            fingers.append(1)
-        else:
-            fingers.append(0)
-
-        # 4 Fingers
-        for id in range(1, 5):
-            if lmList[tipIds[id]][2] < lmList[tipIds[id] - 2][2]:
-                fingers.append(1)
-            else:
-                fingers.append(0)
-
+        fingers = detector.fingersUp()
         totalFingers = fingers.count(1)
 
         cv2.rectangle(img, (20, 225), (170, 425), (0, 255, 0), cv2.FILLED)

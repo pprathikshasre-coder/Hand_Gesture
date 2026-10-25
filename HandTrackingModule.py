@@ -75,19 +75,82 @@ class HandDetector():
         return lmList
 
 
-    def fingersUp(self):
+    def fingersUp(self, myHand=None):
+        if myHand is not None:
+            if isinstance(myHand, dict) and "lmList" in myHand:
+                raw_lm = myHand["lmList"]
+            else:
+                raw_lm = myHand
+        else:
+            raw_lm = getattr(self, "lmList", [])
+
+        if not raw_lm or len(raw_lm) < 21:
+            return [0, 0, 0, 0, 0]
+
+        # Extract (x, y) for each landmark 0..20
+        coords = []
+        for pt in raw_lm:
+            if len(pt) == 3 and isinstance(pt[0], int) and len(raw_lm) > 0 and raw_lm[0][0] == 0:
+                # Format: [id, x, y]
+                coords.append((pt[1], pt[2]))
+            else:
+                # Format: [x, y, ...]
+                coords.append((pt[0], pt[1]))
+
         fingers = []
-        # Thumb
-        if self.lmList[self.tipIds[0]][1] > self.lmList[self.tipIds[0] - 1][1]:
+
+        # Landmark references:
+        # 0: Wrist, 2: Thumb MCP, 3: Thumb IP, 4: Thumb TIP
+        # 5: Index MCP, 9: Middle MCP, 17: Pinky MCP
+        thumb_tip = coords[4]
+        thumb_ip = coords[3]
+        thumb_mcp = coords[2]
+        idx_mcp = coords[5]
+        mid_mcp = coords[9]
+        pky_mcp = coords[17]
+        wrist = coords[0]
+
+        # Orientation check: Is thumb on the left or right side of the palm?
+        # If Index MCP is to the left of Pinky MCP in the image (idx_mcp[0] < pky_mcp[0]),
+        # thumb is on the LEFT. Otherwise, thumb is on the RIGHT.
+        if idx_mcp[0] < pky_mcp[0]:
+            # Thumb is on the left -> OPEN when extended to the left (tip_x < ip_x)
+            lateral_open = (thumb_tip[0] < thumb_ip[0])
+        else:
+            # Thumb is on the right -> OPEN when extended to the right (tip_x > ip_x)
+            lateral_open = (thumb_tip[0] > thumb_ip[0])
+
+        # Distances: Tip to Pinky MCP vs IP to Pinky MCP
+        d_tip_pky = math.hypot(thumb_tip[0] - pky_mcp[0], thumb_tip[1] - pky_mcp[1])
+        d_ip_pky = math.hypot(thumb_ip[0] - pky_mcp[0], thumb_ip[1] - pky_mcp[1])
+        d_mcp_pky = math.hypot(thumb_mcp[0] - pky_mcp[0], thumb_mcp[1] - pky_mcp[1])
+
+        # Distance to Middle MCP (checking if folded onto palm/knuckles in a fist)
+        d_tip_mid = math.hypot(thumb_tip[0] - mid_mcp[0], thumb_tip[1] - mid_mcp[1])
+        palm_size = math.hypot(wrist[0] - mid_mcp[0], wrist[1] - mid_mcp[1])
+        if palm_size == 0:
+            palm_size = 1.0
+
+        is_tucked = (d_tip_mid < 0.50 * palm_size) or (d_tip_pky < 0.90 * d_mcp_pky)
+
+        # Vertical thumb up (thumbs up gesture: tip above IP above MCP and extended from palm)
+        vertical_up = (thumb_tip[1] < thumb_ip[1] < thumb_mcp[1]) and (d_tip_mid > 0.58 * palm_size)
+
+        if (lateral_open and d_tip_pky > d_ip_pky and not is_tucked) or vertical_up:
             fingers.append(1)
         else:
             fingers.append(0)
-        # 4 Fingers
+
+        # 4 Fingers: Index (8), Middle (12), Ring (16), Pinky (20)
+        # Finger is open when tip is higher (smaller y) than PIP joint (id - 2)
         for id in range(1, 5):
-            if self.lmList[self.tipIds[id]][2] < self.lmList[self.tipIds[id] - 2][2]:
+            tip_id = self.tipIds[id]
+            pip_id = tip_id - 2
+            if coords[tip_id][1] < coords[pip_id][1]:
                 fingers.append(1)
             else:
                 fingers.append(0)
+
         return fingers
 
 

@@ -10,3 +10,4 @@ comtypes
 numpy
 pillow
 psutil
+flask

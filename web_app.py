@@ -54,6 +54,9 @@ class State:
         self.rps_ai_move = None
         self.rps_result_text = "Press 'Start Round' to Play!"
         self.rps_scores = [0, 0]  # [AI, Player]
+        self.rps_history = []
+        self.rps_result_time = 0
+        self.rps_live_move = None
         
         # Snake State
         self.snake_points = []
@@ -176,26 +179,9 @@ class VideoCamera:
             return jpeg.tobytes()
 
     def draw_hud_banner(self, frame):
-        # Subtle glassmorphism top header bar
-        overlay = frame.copy()
-        cv2.rectangle(overlay, (0, 0), (1280, 50), (20, 20, 30), cv2.FILLED)
-        cv2.addWeighted(overlay, 0.75, frame, 0.25, 0, frame)
-
-        # Mode Badge
-        mode_str = f"MODE: {state.mode.upper()}"
-        cv2.putText(frame, mode_str, (25, 33), cv2.FONT_HERSHEY_DUPLEX, 0.7, (0, 230, 255), 2)
-
-        # FPS Badge
-        fps_str = f"FPS: {int(state.fps)}"
-        cv2.putText(frame, fps_str, (320, 33), cv2.FONT_HERSHEY_DUPLEX, 0.7, (50, 255, 120), 2)
-
-        # Gesture Badge
-        cv2.putText(frame, f"GESTURE: {state.detected_gesture}", (500, 33),
-                    cv2.FONT_HERSHEY_DUPLEX, 0.65, (255, 220, 0), 2)
-
-        # Hands Badge
-        h_str = f"HANDS: {state.hands_count}"
-        cv2.putText(frame, h_str, (1120, 33), cv2.FONT_HERSHEY_DUPLEX, 0.7, (200, 200, 255), 2)
+        # Subtle, clean studio badge in top-left
+        cv2.circle(frame, (20, 24), 4, (16, 185, 129), cv2.FILLED, cv2.LINE_AA)
+        cv2.putText(frame, "LIVE CAMERA", (32, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (200, 205, 215), 1, cv2.LINE_AA)
 
     # 1. TRACKING
     def process_tracking(self, frame, lm_list, fingers):
@@ -204,12 +190,14 @@ class VideoCamera:
     # 2. FINGERS
     def process_fingers(self, frame, lm_list, fingers):
         count = state.fingers_count
-        state.detected_gesture = f"Count: {count}"
-        # Large graphical counter card on camera
-        cv2.rectangle(frame, (40, 80), (220, 260), (0, 180, 60), cv2.FILLED)
-        cv2.rectangle(frame, (40, 80), (220, 260), (255, 255, 255), 3)
-        cv2.putText(frame, str(count), (90, 220), cv2.FONT_HERSHEY_DUPLEX, 4.5, (255, 255, 255), 8)
-        cv2.putText(frame, "FINGERS", (65, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+        state.detected_gesture = f"{count} Fingers"
+        # Refined, translucent counter badge
+        overlay = frame.copy()
+        cv2.rectangle(overlay, (20, 48), (170, 115), (14, 18, 28), cv2.FILLED)
+        cv2.addWeighted(overlay, 0.75, frame, 0.25, 0, frame)
+        cv2.rectangle(frame, (20, 48), (170, 115), (79, 70, 229), 1, cv2.LINE_AA)
+        cv2.putText(frame, "FINGERS", (32, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (160, 168, 185), 1, cv2.LINE_AA)
+        cv2.putText(frame, str(count), (115, 100), cv2.FONT_HERSHEY_SIMPLEX, 1.4, (255, 255, 255), 2, cv2.LINE_AA)
 
     # 3. VOLUME
     def process_volume(self, frame, lm_list, fingers):
@@ -225,51 +213,101 @@ class VideoCamera:
                 except Exception:
                     pass
             state.current_volume = int(vol_per)
-            cv2.circle(frame, (line_info[4], line_info[5]), 15, (0, 255, 0), cv2.FILLED)
-            state.detected_gesture = f"Volume {int(vol_per)}% [APPLIED]"
-            col = (0, 255, 0)
+            cv2.circle(frame, (line_info[4], line_info[5]), 12, (16, 185, 129), cv2.FILLED, cv2.LINE_AA)
+            state.detected_gesture = f"Volume {int(vol_per)}% [LOCKED]"
+            col = (16, 185, 129)
         else:
-            state.detected_gesture = f"Volume {int(vol_per)}% (Pinch)"
-            col = (255, 120, 0)
+            state.detected_gesture = f"Volume {int(vol_per)}%"
+            col = (99, 102, 241)
 
-        # On-screen visual volume meter
-        vol_bar_y = int(np.interp(vol_per, [0, 100], [420, 150]))
-        cv2.rectangle(frame, (50, 150), (90, 420), col, 3)
-        cv2.rectangle(frame, (50, vol_bar_y), (90, 420), col, cv2.FILLED)
-        cv2.putText(frame, f"{int(vol_per)} %", (45, 460), cv2.FONT_HERSHEY_DUPLEX, 0.9, col, 2)
-        cv2.putText(frame, "Pinky Down: LOCK", (45, 495), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 200, 200), 1)
+        # Refined semi-transparent volume vertical meter
+        overlay = frame.copy()
+        cv2.rectangle(overlay, (30, 140), (60, 360), (14, 18, 28), cv2.FILLED)
+        cv2.addWeighted(overlay, 0.7, frame, 0.3, 0, frame)
+        cv2.rectangle(frame, (30, 140), (60, 360), (50, 60, 80), 1, cv2.LINE_AA)
+        vol_bar_y = int(np.interp(vol_per, [0, 100], [358, 142]))
+        cv2.rectangle(frame, (32, vol_bar_y), (58, 358), col, cv2.FILLED)
+        cv2.putText(frame, f"{int(vol_per)}%", (25, 385), cv2.FONT_HERSHEY_SIMPLEX, 0.55, col, 2, cv2.LINE_AA)
 
     # 4. ROCK PAPER SCISSORS
-    def process_rps(self, frame, lm_list, fingers):
-        # Identify player move
-        player_move = None
-        if fingers == [0, 0, 0, 0, 0]:
-            player_move = 1  # Rock
-            state.detected_gesture = "Rock ✊"
-        elif fingers == [1, 1, 1, 1, 1]:
-            player_move = 2  # Paper
-            state.detected_gesture = "Paper ✋"
-        elif fingers == [0, 1, 1, 0, 0] or fingers == [1, 1, 1, 0, 0]:
-            player_move = 3  # Scissors
-            state.detected_gesture = "Scissors ✌️"
-        else:
-            state.detected_gesture = "Unknown Pose"
+    def classify_rps(self, fingers):
+        if not fingers or len(fingers) < 5:
+            return None, "Show Hand"
+        thumb, index, middle, ring, pinky = fingers
+        total = sum(fingers)
 
+        # 1. SCISSORS: Index and Middle are extended, Ring and Pinky are folded
+        if index == 1 and middle == 1 and ring == 0 and pinky == 0:
+            return 3, "Scissors ✌️"
+
+        # 2. PAPER: 4 or 5 fingers extended
+        if total >= 4 or (index == 1 and middle == 1 and ring == 1 and pinky == 1):
+            return 2, "Paper ✋"
+
+        # 3. ROCK: All 4 main fingers down (fist)
+        if index == 0 and middle == 0 and ring == 0 and pinky == 0:
+            return 1, "Rock ✊"
+
+        # Lenient Rock fallback
+        if total <= 1 and ring == 0 and pinky == 0 and (index == 0 or middle == 0):
+            return 1, "Rock ✊"
+
+        return None, "Detecting Gesture..."
+
+    def process_rps(self, frame, lm_list, fingers):
+        player_move, move_text = self.classify_rps(fingers)
+        state.rps_live_move = player_move
+        state.detected_gesture = move_text
+
+        # 1. Live Gesture Badge on top right of camera feed
+        badge_bg = (30, 30, 45)
+        badge_border = (120, 120, 150)
+        badge_col = (220, 220, 220)
+        if player_move == 1:
+            badge_border = (0, 220, 255)
+            badge_col = (0, 230, 255)
+        elif player_move == 2:
+            badge_border = (0, 255, 120)
+            badge_col = (50, 255, 130)
+        elif player_move == 3:
+            badge_border = (255, 100, 230)
+            badge_col = (255, 120, 240)
+
+        cv2.rectangle(frame, (880, 65), (1255, 125), badge_bg, cv2.FILLED)
+        cv2.rectangle(frame, (880, 65), (1255, 125), badge_border, 2)
+        cv2.putText(frame, f"LIVE: {move_text}", (895, 105),
+                    cv2.FONT_HERSHEY_DUPLEX, 0.75, badge_col, 2)
+
+        # 2. State Machine
+        now = time.time()
         if state.rps_status == "Counting":
-            elapsed = time.time() - state.rps_timer_start
-            remaining = 3 - int(elapsed)
+            if player_move is not None:
+                state.rps_history.append(player_move)
+
+            elapsed = now - state.rps_timer_start
+            remaining = 2.0 - elapsed
             if remaining > 0:
-                cv2.putText(frame, f"SHOW IN: {remaining}", (440, 360),
-                            cv2.FONT_HERSHEY_DUPLEX, 2.5, (0, 220, 255), 6)
+                disp_num = max(1, int(math.ceil(remaining)))
+                cv2.rectangle(frame, (430, 260), (850, 430), (20, 20, 30), cv2.FILLED)
+                cv2.rectangle(frame, (430, 260), (850, 430), (0, 220, 255), 3)
+                cv2.putText(frame, f"SHOW IN: {disp_num}", (465, 340),
+                            cv2.FONT_HERSHEY_DUPLEX, 1.8, (0, 220, 255), 4)
+                cv2.putText(frame, "HOLD YOUR MOVE!", (490, 395),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 255), 2)
             else:
-                # Countdown finished, resolve round!
+                # Countdown finished, determine winner using live or rolling majority
+                final_move = player_move
+                if final_move is None and state.rps_history:
+                    final_move = max(set(state.rps_history), key=state.rps_history.count)
+
                 state.rps_status = "Result"
-                state.rps_player_move = player_move
+                state.rps_player_move = final_move
                 state.rps_ai_move = random.randint(1, 3)
+                state.rps_result_time = now
 
                 # Determine Winner
                 if state.rps_player_move is None:
-                    state.rps_result_text = "Round Incomplete: No gesture detected!"
+                    state.rps_result_text = "No gesture recognized! Try again"
                 elif state.rps_player_move == state.rps_ai_move:
                     state.rps_result_text = "It's a TIE!"
                 elif (state.rps_player_move == 1 and state.rps_ai_move == 3) or \
@@ -282,17 +320,24 @@ class VideoCamera:
                     state.rps_result_text = "AI WINS! 🤖"
 
         elif state.rps_status == "Result":
-            # Display results on camera
-            cv2.rectangle(frame, (320, 120), (960, 260), (30, 30, 45), cv2.FILLED)
-            cv2.rectangle(frame, (320, 120), (960, 260), (0, 220, 255), 3)
-            cv2.putText(frame, state.rps_result_text, (360, 180),
-                        cv2.FONT_HERSHEY_DUPLEX, 1.3, (255, 255, 255), 3)
+            # Auto-reset back to Ready after 2.5 seconds
+            if now - state.rps_result_time > 2.5:
+                state.rps_status = "Ready"
+                state.rps_result_text = "Ready! Press Start Round"
+                return
+
+            # Display match result banner
+            cv2.rectangle(frame, (270, 110), (1010, 270), (20, 20, 35), cv2.FILLED)
+            border_color = (0, 255, 120) if "WIN" in state.rps_result_text else ((0, 100, 255) if "AI" in state.rps_result_text else (255, 200, 0))
+            cv2.rectangle(frame, (270, 110), (1010, 270), border_color, 3)
+            cv2.putText(frame, state.rps_result_text, (310, 175),
+                        cv2.FONT_HERSHEY_DUPLEX, 1.4, (255, 255, 255), 3)
 
             move_names = {1: "ROCK ✊", 2: "PAPER ✋", 3: "SCISSORS ✌️"}
             p_name = move_names.get(state.rps_player_move, "None")
             a_name = move_names.get(state.rps_ai_move, "None")
-            cv2.putText(frame, f"You: {p_name}  |  AI: {a_name}", (360, 230),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 180), 2)
+            cv2.putText(frame, f"You: {p_name}   vs   AI: {a_name}", (310, 230),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 230, 255), 2)
 
     # 5. SNAKE GAME
     def process_snake(self, frame, lm_list, fingers):
@@ -505,6 +550,7 @@ def api_rps_start():
     state.rps_timer_start = time.time()
     state.rps_player_move = None
     state.rps_ai_move = None
+    state.rps_history = []
     state.rps_result_text = "Show your move!"
     return jsonify({"success": True})
 
