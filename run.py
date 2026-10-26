@@ -3,6 +3,7 @@ import os
 import subprocess
 
 SCRIPT_MAP = {
+    "0": ("All-in-One Engine (All Features)", "main.py"),
     "1": ("Interactive Gesture Menu", "MenuScreen.py"),
     "2": ("Hand Landmark Tracking", "Sample.py"),
     "3": ("Finger Counter", "FingerCounter.py"),
@@ -16,7 +17,12 @@ SCRIPT_MAP = {
 }
 
 ALIAS_MAP = {
+    "all": "main.py",
+    "main": "main.py",
+    "one": "main.py",
+    "allinone": "main.py",
     "web": "web_app.py",
+
     "browser": "web_app.py",
     "ui": "SuperUI.py",
     "superui": "SuperUI.py",
